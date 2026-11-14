@@ -198,3 +198,12 @@ body.resizing { cursor: col-resize; user-select: none; }
   .btn { padding: 0 9px; }
   .workspace { margin: 8px; }
 }
+
+/* Search-friendly introduction, without taking focus from the editor. */
+.intro { flex: none; padding: 12px 20px 0; }
+.intro h1 { margin: 0 0 4px; font: 600 17px var(--sans); color: var(--text); }
+.intro p { margin: 0; font-size: 13px; color: #aaa399; line-height: 1.6; }
+.intro details { margin-top: 4px; max-width: 920px; font-size: 12px; }
+.intro summary { cursor: pointer; color: var(--amber); width: fit-content; }
+.intro details p { padding: 6px 0; }
+@media (max-width: 760px) { .intro { padding: 10px 12px 0; } }
