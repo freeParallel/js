@@ -1,15 +1,16 @@
-/* JS Playground — a live JavaScript scratchpad.
+/* maquina.js — live JavaScript scratchpad by maquina.Earth.
  * Code runs in a disposable Web Worker; console output and top-level
  * expression values are shown on the matching line in the right pane. */
 (() => {
   'use strict';
 
   const $ = (s) => document.querySelector(s);
-  const STORE = { code: 'jsp.code', settings: 'jsp.settings' };
+  const STORE = { code: 'maquina.js.code', settings: 'maquina.js.settings' };
   const MAX_PER_LINE = 50;
 
   const EXAMPLE = [
-    '// Code runs as you type. Ctrl+Enter runs manually.',
+    '// maquina.js: results appear next to each line as you type.',
+    '// Ctrl+Enter runs manually · Ctrl+S copies a share link.',
     'console.log("Hello, world!")',
     '',
     'const nums = [1, 2, 3, 4, 5]',
@@ -32,7 +33,7 @@
   ].join('\n');
 
   // ---------------------------------------------------------------- settings
-  const DEFAULTS = { autoRun: true, showExpr: true, lineNumbers: false, fontSize: 15, timeout: 5, split: 60 };
+  const DEFAULTS = { autoRun: true, showExpr: true, lineNumbers: true, fontSize: 14, timeout: 5, split: 58 };
   const settings = { ...DEFAULTS };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(STORE.settings) || '{}')); } catch { /* ignore */ }
   const saveSettings = () => localStorage.setItem(STORE.settings, JSON.stringify(settings));
@@ -220,7 +221,8 @@
   const cm = CodeMirror($('#editorPane'), {
     value: localStorage.getItem(STORE.code) ?? EXAMPLE,
     mode: 'javascript',
-    theme: 'playground',
+    theme: 'maquina',
+    styleActiveLine: true,
     lineNumbers: settings.lineNumbers,
     indentUnit: 2,
     tabSize: 2,
@@ -318,6 +320,10 @@
   }, { passive: true });
 
   cm.on('scroll', scheduleRender);
+  cm.on('cursorActivity', () => {
+    const c = cm.getCursor();
+    $('#cursorPos').textContent = `Ln ${c.line + 1}, Col ${c.ch + 1}`;
+  });
   cm.on('refresh', scheduleRender);
   window.addEventListener('resize', scheduleRender);
 
@@ -327,16 +333,19 @@
   let lastPong = 0;
   let runId = 0;
 
-  function setStatus(text, isError = false) {
+  const statusBar = $('#statusbar');
+  const dot = $('#dot');
+  function setStatus(text, isError = false, state = isError ? 'err' : 'ok') {
     statusEl.textContent = text;
-    statusEl.classList.toggle('error', isError);
+    statusBar.classList.toggle('error', isError);
+    dot.className = 'dot ' + (text ? state : '');
   }
 
   function stop(silent = false) {
     if (worker) { worker.terminate(); worker = null; }
     clearInterval(heartbeat);
     stopBtn.classList.remove('active');
-    if (!silent) setStatus('Stopped');
+    if (!silent) setStatus('stopped', false, '');
   }
 
   function run() {
@@ -350,7 +359,7 @@
       clearResults();
       const msg = inst.error.message.replace(/\s*\(\d+:\d+\)$/, '');
       addEntry(inst.error.loc ? inst.error.loc.line : null, 'error', `SyntaxError: ${msg}`);
-      setStatus('Syntax error', true);
+      setStatus('syntax error', true);
       return;
     }
 
@@ -363,7 +372,7 @@
     lastPong = Date.now();
     worker = new Worker(workerURL);
     stopBtn.classList.add('active');
-    setStatus('Running…');
+    setStatus('running…', false, 'busy');
 
     worker.onmessage = ({ data: m }) => {
       if (id !== runId) return;
@@ -375,7 +384,7 @@
           takeOver();
           lastPong = Date.now();
           stopBtn.classList.remove('active');
-          setStatus(`Ran in ${(performance.now() - t0).toFixed(1)} ms`);
+          setStatus(`ran in ${(performance.now() - t0).toFixed(1)} ms`);
           break;
       }
     };
@@ -390,7 +399,7 @@
         stop(true);
         takeOver();
         addEntry(null, 'error', `Execution stopped: no response for ${settings.timeout}s (infinite loop?)`);
-        setStatus('Timed out', true);
+        setStatus('timed out', true);
         return;
       }
       worker.postMessage({ type: 'ping' });
@@ -408,7 +417,7 @@
 
   $('#runBtn').onclick = () => { run(); cm.focus(); };
   stopBtn.onclick = () => { stop(); cm.focus(); };
-  $('#clearBtn').onclick = () => { clearResults(); setStatus(''); cm.focus(); };
+  $('#clearBtn').onclick = () => { clearResults(); setStatus('ready', false, ''); cm.focus(); };
 
   // ------------------------------------------------------------------- share
   const b64url = (bytes) => {
@@ -476,10 +485,9 @@
     divider.setPointerCapture(e.pointerId);
     divider.classList.add('dragging');
     document.body.classList.add('resizing');
-    const rail = $('.rail').getBoundingClientRect();
-    const total = playground.getBoundingClientRect().right - rail.right;
+    const box = $('.panes').getBoundingClientRect();
     const move = (ev) => {
-      settings.split = Math.max(15, Math.min(85, ((ev.clientX - rail.right) / total) * 100));
+      settings.split = Math.max(15, Math.min(85, ((ev.clientX - box.left) / box.width) * 100));
       editorPane.style.flexBasis = `${settings.split}%`;
       scheduleRender();
     };
