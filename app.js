@@ -1,6 +1,6 @@
 /* maquina.js — live JavaScript scratchpad by maquina.Earth.
  * Code runs in a disposable Web Worker; console output and top-level
- * expression values are shown on the matching line in the right pane. */
+ * expression values are shown on the matching line in the selected output pane. */
 (() => {
   'use strict';
 
@@ -33,9 +33,10 @@
   ].join('\n');
 
   // ---------------------------------------------------------------- settings
-  const DEFAULTS = { autoRun: true, showExpr: true, lineNumbers: true, fontSize: 14, timeout: 5, split: 58 };
+  const DEFAULTS = { autoRun: true, showExpr: true, lineNumbers: true, fontSize: 14, timeout: 5, split: 58, splitBelow: 50, layout: 'right' };
   const settings = { ...DEFAULTS };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(STORE.settings) || '{}')); } catch { /* ignore */ }
+  if (!['right', 'below', 'left'].includes(settings.layout)) settings.layout = 'right';
   const saveSettings = () => localStorage.setItem(STORE.settings, JSON.stringify(settings));
 
   // ------------------------------------------------------------------ worker
@@ -280,8 +281,12 @@
 
   function render() {
     rafId = 0;
-    const paneTop = outputPane.getBoundingClientRect().top;
+    const paneTop = cm.getWrapperElement().getBoundingClientRect().top;
     const paneH = outputPane.clientHeight;
+    const below = settings.layout === 'below';
+    const scroll = cm.getScrollInfo();
+    outputEl.style.height = below ? `${scroll.height}px` : '';
+    const outputScroll = below ? outputPane.scrollTop : 0;
     const lh = cm.defaultTextHeight();
     const last = cm.lineCount();
     const frag = document.createDocumentFragment();
@@ -289,8 +294,8 @@
     for (const [key, list] of results) {
       const line = key === 'tail' ? last : Math.min(key, last);
       const c = cm.charCoords({ line: line - 1, ch: 0 }, 'window');
-      const top = (key === 'tail' ? c.bottom : c.top) - paneTop;
-      if (top < -lh * 2 || top > paneH + lh) continue;
+      const top = (key === 'tail' ? c.bottom : c.top) - paneTop + (below ? scroll.top : 0);
+      if (top < outputScroll - lh * 2 || top > outputScroll + paneH + lh) continue;
 
       const row = document.createElement('div');
       row.className = 'row' + (expanded === key ? ' expanded' : '');
@@ -319,11 +324,20 @@
     scheduleRender();
   });
   outputPane.addEventListener('wheel', (e) => {
+    if (settings.layout === 'below') return;
     if (e.target.closest('.row.expanded')) return;
     cm.scrollTo(null, cm.getScrollInfo().top + e.deltaY);
   }, { passive: true });
 
-  cm.on('scroll', scheduleRender);
+  outputPane.addEventListener('scroll', scheduleRender);
+  cm.on('scroll', () => {
+    if (settings.layout === 'below') {
+      const scroll = cm.getScrollInfo();
+      const progress = scroll.top / Math.max(1, scroll.height - scroll.clientHeight);
+      outputPane.scrollTop = progress * Math.max(0, scroll.height - outputPane.clientHeight);
+    }
+    scheduleRender();
+  });
   cm.on('cursorActivity', () => {
     const c = cm.getCursor();
     $('#cursorPos').textContent = `Ln ${c.line + 1}, Col ${c.ch + 1}`;
@@ -421,7 +435,19 @@
 
   $('#runBtn').onclick = () => { run(); cm.focus(); };
   stopBtn.onclick = () => { stop(); cm.focus(); };
-  $('#clearBtn').onclick = () => { clearResults(); setStatus('ready', false, ''); cm.focus(); };
+  $('#clearBtn').onclick = () => {
+    stop(true);
+    ++runId;
+    cm.operation(() => {
+      cm.replaceRange('', { line: 0, ch: 0 }, { line: cm.lastLine(), ch: cm.getLine(cm.lastLine()).length }, 'clear');
+      cm.setCursor(0, 0);
+    });
+    clearTimeout(debounce);
+    if (location.hash.startsWith('#code=')) history.replaceState(null, '', location.pathname + location.search);
+    clearResults();
+    setStatus('editor cleared · Ctrl+Z to undo', false, '');
+    cm.focus();
+  };
 
   // --------------------------------------------------------------- local file
   function saveCode() {
@@ -545,42 +571,123 @@
   // -------------------------------------------------------------- fullscreen
   function toggleFullscreen(force) {
     playground.classList.toggle('fullscreen', force);
-    cm.refresh();
+    applySplit();
     cm.focus();
   }
   $('#fullscreenBtn').onclick = () => toggleFullscreen();
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if (!settingsForm.hidden) settingsForm.hidden = true;
+      if (!layoutMenu.hidden) closeLayout(true);
+      else if (!settingsForm.hidden) settingsForm.hidden = true;
       else if (playground.classList.contains('fullscreen')) toggleFullscreen(false);
     }
   });
 
-  // ------------------------------------------------------------ split pane
+  // -------------------------------------------------------- output placement
+  const panes = $('.panes');
+  const layoutBtn = $('#layoutBtn');
+  const layoutMenu = $('#layoutMenu');
   const editorPane = $('#editorPane');
   const divider = $('#divider');
-  const applySplit = () => { editorPane.style.flexBasis = `${settings.split}%`; cm.refresh(); };
+  const splitKey = () => settings.layout === 'below' ? 'splitBelow' : 'split';
+  function splitBounds() {
+    const box = panes.getBoundingClientRect();
+    const below = settings.layout === 'below';
+    const size = below ? box.height : box.width;
+    return { min: Math.max(15, (below ? 100 : 120) / Math.max(size, 1) * 100),
+      max: Math.min(85, 100 - ((below ? 80 : 120) + 1) / Math.max(size, 1) * 100) };
+  }
+  function applySplit() {
+    const key = splitKey(), bounds = splitBounds();
+    const value = Number.isFinite(+settings[key]) ? +settings[key] : DEFAULTS[key];
+    settings[key] = Math.max(bounds.min, Math.min(bounds.max, value));
+    editorPane.style.flexBasis = `${settings[key]}%`;
+    divider.setAttribute('aria-valuemin', Math.ceil(bounds.min));
+    divider.setAttribute('aria-valuemax', Math.floor(bounds.max));
+    divider.setAttribute('aria-valuenow', Math.round(settings[key]));
+    cm.refresh();
+    scheduleRender();
+  }
+  function applyLayout() {
+    panes.dataset.layout = settings.layout;
+    outputPane.scrollTop = 0;
+    divider.setAttribute('aria-orientation', settings.layout === 'below' ? 'horizontal' : 'vertical');
+    for (const button of layoutMenu.querySelectorAll('[data-layout-option]')) {
+      button.setAttribute('aria-pressed', String(button.dataset.layoutOption === settings.layout));
+    }
+    layoutBtn.title = `Output layout · ${settings.layout}`;
+    applySplit();
+  }
+  function closeLayout(focus = false) {
+    layoutMenu.hidden = true;
+    layoutBtn.setAttribute('aria-expanded', 'false');
+    if (focus) layoutBtn.focus();
+  }
+  layoutBtn.onclick = () => {
+    if (!layoutMenu.hidden) { closeLayout(); return; }
+    settingsForm.hidden = true;
+    const bar = $('.toolbar');
+    layoutMenu.style.top = `${bar.offsetTop + bar.offsetHeight + 6}px`;
+    layoutMenu.hidden = false;
+    layoutBtn.setAttribute('aria-expanded', 'true');
+    layoutMenu.querySelector('[aria-pressed="true"]').focus();
+  };
+  for (const button of layoutMenu.querySelectorAll('[data-layout-option]')) {
+    button.onclick = () => {
+      settings.layout = button.dataset.layoutOption;
+      applyLayout(); saveSettings(); closeLayout(true);
+    };
+  }
+  document.addEventListener('click', (e) => {
+    if (!layoutMenu.hidden && !layoutMenu.contains(e.target) && !layoutBtn.contains(e.target)) closeLayout();
+  });
+  window.addEventListener('resize', () => { closeLayout(); applySplit(); });
+  $('.intro details').addEventListener('toggle', applySplit);
+
+  // ------------------------------------------------------------ split pane
   divider.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    divider.focus({ preventScroll: true });
     divider.setPointerCapture(e.pointerId);
     divider.classList.add('dragging');
     document.body.classList.add('resizing');
-    const box = $('.panes').getBoundingClientRect();
+    const below = settings.layout === 'below';
+    document.body.classList.toggle('resizing-vertical', below);
+    const box = panes.getBoundingClientRect();
     const move = (ev) => {
-      settings.split = Math.max(15, Math.min(85, ((ev.clientX - box.left) / box.width) * 100));
-      editorPane.style.flexBasis = `${settings.split}%`;
-      scheduleRender();
+      let fraction = below ? (ev.clientY - box.top) / box.height : (ev.clientX - box.left) / box.width;
+      if (settings.layout === 'left') fraction = 1 - fraction;
+      settings[splitKey()] = fraction * 100;
+      applySplit();
     };
     const up = () => {
       divider.removeEventListener('pointermove', move);
+      divider.removeEventListener('pointerup', up);
+      divider.removeEventListener('pointercancel', up);
+      divider.removeEventListener('lostpointercapture', up);
       divider.classList.remove('dragging');
-      document.body.classList.remove('resizing');
+      document.body.classList.remove('resizing', 'resizing-vertical');
+      if (divider.hasPointerCapture(e.pointerId)) divider.releasePointerCapture(e.pointerId);
       saveSettings();
       cm.refresh();
     };
     divider.addEventListener('pointermove', move);
-    divider.addEventListener('pointerup', up, { once: true });
+    divider.addEventListener('pointerup', up);
+    divider.addEventListener('pointercancel', up);
+    divider.addEventListener('lostpointercapture', up);
   });
-  divider.addEventListener('dblclick', () => { settings.split = DEFAULTS.split; applySplit(); saveSettings(); });
+  divider.addEventListener('keydown', (e) => {
+    const below = settings.layout === 'below';
+    const forward = below ? 'ArrowDown' : settings.layout === 'left' ? 'ArrowLeft' : 'ArrowRight';
+    const backward = below ? 'ArrowUp' : settings.layout === 'left' ? 'ArrowRight' : 'ArrowLeft';
+    if (![forward, backward, 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const key = splitKey(), bounds = splitBounds();
+    settings[key] = e.key === 'Home' ? bounds.min : e.key === 'End' ? bounds.max : settings[key] + (e.key === forward ? 3 : -3);
+    applySplit(); saveSettings();
+  });
+  divider.addEventListener('dblclick', () => { settings[splitKey()] = DEFAULTS[splitKey()]; applySplit(); saveSettings(); });
 
   // ---------------------------------------------------------------- settings
   const settingsForm = $('#settings');
@@ -602,7 +709,7 @@
       if (input.name === 'showExpr' && settings.autoRun) run();
     });
   }
-  $('#settingsBtn').onclick = (e) => { e.stopPropagation(); settingsForm.hidden = !settingsForm.hidden; };
+  $('#settingsBtn').onclick = (e) => { e.stopPropagation(); closeLayout(); settingsForm.hidden = !settingsForm.hidden; };
   document.addEventListener('click', (e) => {
     if (!settingsForm.hidden && !settingsForm.contains(e.target)) settingsForm.hidden = true;
   });
@@ -610,7 +717,7 @@
 
   // -------------------------------------------------------------------- init
   async function init() {
-    applySplit();
+    applyLayout();
     applySettings();
     const m = /#code=([\w-]+)/.exec(location.hash);
     if (m) {
