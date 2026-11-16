@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-  <link rel="stylesheet" href="style.css?v=seo-1">
+  <link rel="stylesheet" href="style.css?v=local-files-2">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -71,7 +71,7 @@
     <p>Write and run JavaScript in your browser with instant, line-by-line results. Free to use. No signup.</p>
     <details>
       <summary>How to use maquina.js</summary>
-      <p>Type JavaScript in the editor and see console output and top-level expression results alongside your code. Use Ctrl+Enter to run manually, test promises with top-level await, download your code with Save .js (Ctrl+Shift+S), or share a snippet using the Share button. Execution runs in a separate worker with an infinite-loop timeout; browser DOM APIs such as document are not available.</p>
+      <p>Type JavaScript in the editor and see console output and top-level expression results alongside your code. Use Ctrl+Enter to run manually, Load (Ctrl+O) to open a local code file, Save .js (Ctrl+Shift+S) to download your code, or Share to copy a snippet link. Loading pauses auto-run so you can inspect the file before pressing Run. Files stay in your browser; they are not uploaded. Execution runs in a separate worker with an infinite-loop timeout; browser DOM APIs such as document are not available.</p>
     </details>
   </section>
 
@@ -87,6 +87,10 @@
       <button id="clearBtn" class="btn" title="Clear output">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg><span>Clear</span>
       </button>
+      <button id="loadBtn" class="btn" type="button" title="Load a local code file (Ctrl+O)" aria-label="Load code from a local file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h7l2 2h9l-3 11H3V7Zm0 0V4h6l2 3"/></svg><span>Load</span>
+      </button>
+      <input id="loadFile" type="file" accept=".js,.mjs,.cjs,.txt,text/javascript,application/javascript,text/plain" hidden>
       <button id="saveBtn" class="btn" type="button" title="Save code as a .js file (Ctrl+Shift+S)" aria-label="Save code as a JavaScript file">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg><span>Save .js</span>
       </button>
@@ -139,7 +143,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/acorn@8.12.1/dist/acorn.js"></script>
-  <script src="app.js?v=local-save-1"></script>
+  <script src="app.js?v=local-files-2"></script>
   <!-- Cloudflare Web Analytics -->
   <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"8ab345c48040403c9d8c565fef2612bb"}'></script>
   <!-- End Cloudflare Web Analytics -->

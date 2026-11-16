@@ -22,7 +22,8 @@ python3 -m http.server 8765
 - Errors highlighted on the line that threw
 - Share links (code compressed into the URL hash), `Ctrl+S` copies the link
 - Download the current editor contents as `maquina-snippet.js` using **Save .js**, or `Ctrl+Shift+S` / `Cmd+Shift+S` while the editor is focused. Exact UTF-8 contents are preserved, including empty or unfinished code. The browser controls the download location; no upload is involved.
-- Toolbar (Run / Stop / Clear / Save .js / Share), status bar with run state, timing and cursor position
+- **Load** (`Ctrl+O` / `Cmd+O` while the editor is focused) opens a local `.js`, `.mjs`, `.cjs` or `.txt` file, up to 1 MB. It confirms before replacing different nonempty code. Loading pauses auto-run and clears old results; press Run when ready, or re-enable Run while typing in Settings. Manual mode stays manual after reload and display-setting changes. No upload is involved; file extensions do not add module/import support to the script runner.
+- Toolbar (Run / Stop / Clear / Load / Save .js / Share), status bar with run state, timing and cursor position
 - Settings: auto-run, expression results, line numbers, font size, timeout
 - Resizable split pane (double-click the divider to reset), fullscreen mode, code saved in localStorage
 
@@ -35,3 +36,5 @@ CodeMirror 5 (editor) and Acorn (parsing for expression results), both from CDN.
 ## Save regression checks
 
 `tests/browser-save.py` runs in the browser harness and checks actual downloaded files, their exact bytes, the editor shortcut and narrow-screen action visibility. Invoke `run_save_checks(url, js, cdp, goto_url, wait_for_load)` with the browser helpers. Test downloads go into a unique folder under the Hermes scratch directory, and the test restores the editor, auto-run setting and default download behaviour afterward.
+
+`tests/browser-load.py` checks native file-picker activation, accepted/cancelled replacement, Unicode, same-file reselection, empty/unfinished files, validation limits, manual-mode persistence and a real Load → Save file round trip. Invoke `run_load_checks(url, js, cdp, goto_url, wait_for_load)` with the same helpers.

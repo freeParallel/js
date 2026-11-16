@@ -69,6 +69,7 @@ body {
 }
 .btn svg { width: 14px; height: 14px; }
 .btn:hover { border-color: var(--amber-dim); color: var(--amber); }
+.btn:disabled { opacity: .5; cursor: wait; }
 .btn.icon { width: 30px; padding: 0; justify-content: center; }
 .btn.primary { background: var(--amber); border-color: var(--amber); color: #000; font-weight: 600; }
 .btn.primary:hover { background: #ffb877; color: #000; }
@@ -197,6 +198,10 @@ body.resizing { cursor: col-resize; user-select: none; }
   .tagline, .hint, .btn span, .pane-label { display: none; }
   .btn { padding: 0 9px; }
   .workspace { margin: 8px; }
+}
+@media (max-width: 480px) {
+  .toolbar { flex-wrap: wrap; }
+  .toolbar .btn { flex-shrink: 0; }
 }
 
 /* Search-friendly introduction, without taking focus from the editor. */

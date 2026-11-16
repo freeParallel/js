@@ -238,6 +238,8 @@
       'Cmd-S': () => share(),
       'Shift-Ctrl-S': () => saveCode(),
       'Shift-Cmd-S': () => saveCode(),
+      'Ctrl-O': () => chooseCodeFile(),
+      'Cmd-O': () => chooseCodeFile(),
       Tab: (ed) => (ed.somethingSelected() ? ed.indentSelection('add') : ed.replaceSelection('  ')),
       'Shift-Tab': (ed) => ed.indentSelection('subtract'),
     },
@@ -444,6 +446,58 @@
   }
   $('#saveBtn').onclick = saveCode;
 
+  const loadBtn = $('#loadBtn');
+  const loadFile = $('#loadFile');
+  function chooseCodeFile() {
+    if (loadBtn.disabled) return;
+    loadFile.value = ''; // Allow picking the same file again.
+    loadFile.click();
+  }
+  loadBtn.onclick = chooseCodeFile;
+  loadFile.addEventListener('change', async () => {
+    const file = loadFile.files[0];
+    if (!file || loadBtn.disabled) return;
+    if (!/\.(?:js|mjs|cjs|txt)$/i.test(file.name)) {
+      toast('Choose a .js, .mjs, .cjs or .txt file.');
+      loadFile.value = '';
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      toast('Please choose a code file smaller than 1 MB.');
+      loadFile.value = '';
+      return;
+    }
+    loadBtn.disabled = true;
+    try {
+      const source = await file.text();
+      if (source.includes('\0')) {
+        toast('That file does not look like a plain-text code file.');
+        return;
+      }
+      if (cm.getValue() && cm.getValue() !== source &&
+          !confirm('Replace the current code with ' + file.name + '? Save .js first if you want to keep your current code.')) return;
+      // Imports are inspected first, never executed automatically, even on reload.
+      clearTimeout(debounce);
+      stop(true);
+      ++runId;
+      settings.autoRun = false;
+      saveSettings();
+      settingsForm.elements.autoRun.checked = false;
+      if (location.hash.startsWith('#code=')) history.replaceState(null, '', location.pathname + location.search);
+      cm.setValue(source);
+      cm.setCursor(0, 0);
+      clearResults();
+      setStatus('file loaded · press Run', false, '');
+      toast('Loaded ' + file.name + ' · auto-run paused');
+      cm.focus();
+    } catch {
+      toast('Could not load that file. Please try again.');
+    } finally {
+      loadFile.value = '';
+      loadBtn.disabled = false;
+    }
+  });
+
   // ------------------------------------------------------------------- share
   const b64url = (bytes) => {
     let s = '';
@@ -545,7 +599,7 @@
       if (input.type !== 'checkbox') input.value = settings[input.name];
       saveSettings();
       applySettings();
-      if (input.name === 'showExpr') run();
+      if (input.name === 'showExpr' && settings.autoRun) run();
     });
   }
   $('#settingsBtn').onclick = (e) => { e.stopPropagation(); settingsForm.hidden = !settingsForm.hidden; };
@@ -564,7 +618,8 @@
       catch { toast('Could not read the shared code link'); }
     }
     cm.setCursor(cm.lineCount(), 0);
-    run();
+    if (settings.autoRun) run();
+    else setStatus('ready · press Run', false, '');
   }
   init();
 })();
