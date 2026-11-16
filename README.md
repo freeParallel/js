@@ -21,7 +21,8 @@ python3 -m http.server 8765
 - Code runs in a throwaway Web Worker, so the page never freezes; infinite loops are killed after a timeout
 - Errors highlighted on the line that threw
 - Share links (code compressed into the URL hash), `Ctrl+S` copies the link
-- Toolbar (Run / Stop / Clear / Share), status bar with run state, timing and cursor position
+- Download the current editor contents as `maquina-snippet.js` using **Save .js**, or `Ctrl+Shift+S` / `Cmd+Shift+S` while the editor is focused. Exact UTF-8 contents are preserved, including empty or unfinished code. The browser controls the download location; no upload is involved.
+- Toolbar (Run / Stop / Clear / Save .js / Share), status bar with run state, timing and cursor position
 - Settings: auto-run, expression results, line numbers, font size, timeout
 - Resizable split pane (double-click the divider to reset), fullscreen mode, code saved in localStorage
 
@@ -30,3 +31,7 @@ Click an output row to expand long values.
 ## Stack
 
 CodeMirror 5 (editor) and Acorn (parsing for expression results), both from CDN.
+
+## Save regression checks
+
+`tests/browser-save.py` runs in the browser harness and checks actual downloaded files, their exact bytes, the editor shortcut and narrow-screen action visibility. Invoke `run_save_checks(url, js, cdp, goto_url, wait_for_load)` with the browser helpers. Test downloads go into a unique folder under the Hermes scratch directory, and the test restores the editor, auto-run setting and default download behaviour afterward.

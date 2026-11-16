@@ -236,6 +236,8 @@
       'Cmd-/': 'toggleComment',
       'Ctrl-S': () => share(),
       'Cmd-S': () => share(),
+      'Shift-Ctrl-S': () => saveCode(),
+      'Shift-Cmd-S': () => saveCode(),
       Tab: (ed) => (ed.somethingSelected() ? ed.indentSelection('add') : ed.replaceSelection('  ')),
       'Shift-Tab': (ed) => ed.indentSelection('subtract'),
     },
@@ -418,6 +420,29 @@
   $('#runBtn').onclick = () => { run(); cm.focus(); };
   stopBtn.onclick = () => { stop(); cm.focus(); };
   $('#clearBtn').onclick = () => { clearResults(); setStatus('ready', false, ''); cm.focus(); };
+
+  // --------------------------------------------------------------- local file
+  function saveCode() {
+    const link = document.createElement('a');
+    let url;
+    try {
+      const file = new Blob([cm.getValue()], { type: 'text/javascript;charset=utf-8' });
+      url = URL.createObjectURL(file);
+      link.href = url;
+      link.download = 'maquina-snippet.js';
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      toast('Download requested · maquina-snippet.js');
+    } catch {
+      toast('Could not start the download. Please try again.');
+    } finally {
+      link.remove();
+      // Give the browser time to consume the URL before releasing the Blob.
+      if (url) setTimeout(() => URL.revokeObjectURL(url), 30000);
+    }
+  }
+  $('#saveBtn').onclick = saveCode;
 
   // ------------------------------------------------------------------- share
   const b64url = (bytes) => {
