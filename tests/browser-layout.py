@@ -100,6 +100,7 @@ def run_layout_checks(url, js, cdp, goto_url, wait_for_load):
             check(f'{width}px layout chooser fits',js("(()=>{const b=document.querySelector('#layoutMenu').getBoundingClientRect();return b.left>=0&&b.right<=innerWidth})()"))
             key('Escape',27)
             check(f'{width}px both Clear actions remain reachable',js("['clearBtn','clearOutputBtn'].every(id=>{const a=document.getElementById(id),b=a.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)?.closest('button')===a})"))
+            check(f'{width}px Clear actions sit next to each other',js("(()=>{const a=document.querySelector('#clearBtn'),b=document.querySelector('#clearOutputBtn'),x=a.getBoundingClientRect(),y=b.getBoundingClientRect();return a.nextElementSibling===b&&Math.abs(x.top-y.top)<1&&y.left>=x.right&&y.left-x.right<10})()"))
             click('#settingsBtn')
             check(f'{width}px settings opens below toolbar',js("document.querySelector('#settings').getBoundingClientRect().top>=document.querySelector('.toolbar').getBoundingClientRect().bottom"))
             key('Escape',27)
