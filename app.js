@@ -449,6 +449,12 @@
     cm.focus();
   };
 
+  $('#clearOutputBtn').onclick = () => {
+    clearResults();
+    toast('Output cleared · code unchanged');
+    cm.focus();
+  };
+
   // --------------------------------------------------------------- local file
   function saveCode() {
     const link = document.createElement('a');
@@ -709,7 +715,13 @@
       if (input.name === 'showExpr' && settings.autoRun) run();
     });
   }
-  $('#settingsBtn').onclick = (e) => { e.stopPropagation(); closeLayout(); settingsForm.hidden = !settingsForm.hidden; };
+  $('#settingsBtn').onclick = (e) => {
+    e.stopPropagation();
+    closeLayout();
+    const bar = $('.toolbar');
+    settingsForm.style.top = `${bar.offsetTop + bar.offsetHeight + 6}px`;
+    settingsForm.hidden = !settingsForm.hidden;
+  };
   document.addEventListener('click', (e) => {
     if (!settingsForm.hidden && !settingsForm.contains(e.target)) settingsForm.hidden = true;
   });

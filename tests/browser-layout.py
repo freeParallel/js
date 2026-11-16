@@ -26,6 +26,24 @@ def run_layout_checks(url, js, cdp, goto_url, wait_for_load):
     saved=js("({code:localStorage.getItem('maquina.js.code'),settings:localStorage.getItem('maquina.js.settings'),hash:location.hash})")
     try:
         auto(False)
+        check('two clearly named Clear actions exist',js("document.querySelector('#clearBtn').textContent.includes('Clear code')&&document.querySelector('#clearOutputBtn').textContent.includes('Clear output')"))
+        for layout in ['right','below','left']:
+            choose(layout)
+            sample='console.log("before clear");\nsetTimeout(()=>console.log("after clear"),500)'
+            set_code(sample);click('#runBtn');time.sleep(.1)
+            history=js("document.querySelector('.CodeMirror').CodeMirror.historySize()")
+            js("history.replaceState(null,'',location.pathname+location.search+'#code=sample')")
+            click('#clearOutputBtn');time.sleep(.1)
+            check(layout+' Clear output removes current results',js("document.querySelectorAll('.row').length===0"))
+            check(layout+' Clear output preserves code and autosave',code()==sample and js("localStorage.getItem('maquina.js.code')")==sample)
+            check(layout+' Clear output preserves Undo history',js("document.querySelector('.CodeMirror').CodeMirror.historySize()")==history)
+            check(layout+' Clear output preserves share state',js("location.hash==='#code=sample'"))
+            time.sleep(.6)
+            check(layout+' Clear output leaves async execution running',js("[...document.querySelectorAll('.row')].some(r=>r.textContent==='after clear')"))
+            js("history.replaceState(null,'',location.pathname+location.search)")
+        auto(True);set_code('console.log("pending survives output clear")');click('#clearOutputBtn');time.sleep(.7)
+        check('Clear output does not cancel pending auto-run',js("[...document.querySelectorAll('.row')].some(r=>r.textContent==='pending survives output clear')"))
+        auto(False)
         source='// clear regression\nconst x = "café 🌍";\nconsole.log(x);\n'
         set_code(source);click('#clearBtn')
         check('Clear empties the code editor',code()=='')
@@ -73,13 +91,17 @@ def run_layout_checks(url, js, cdp, goto_url, wait_for_load):
         check('Escape closes layout popup',js("document.querySelector('#layoutMenu').hidden&&document.activeElement.id==='layoutBtn'"))
         click('#layoutBtn');click('#runBtn');time.sleep(.1)
         check('outside click dismisses layout popup',js("document.querySelector('#layoutMenu').hidden"))
-        for width in [390,320]:
+        for width in [800,390,320]:
             cdp('Emulation.setDeviceMetricsOverride',width=width,height=844,deviceScaleFactor=1,mobile=True);time.sleep(.2)
             for layout in ['right','below','left']:
                 choose(layout)
                 check(f'{width}px {layout} panes fit',js("(()=>{const p=document.querySelector('.panes').getBoundingClientRect();return ['editorPane','outputPane'].every(id=>{const b=document.getElementById(id).getBoundingClientRect();return b.left>=p.left-.5&&b.right<=p.right+.5&&b.top>=p.top-.5&&b.bottom<=p.bottom+.5})})()"))
             click('#layoutBtn')
             check(f'{width}px layout chooser fits',js("(()=>{const b=document.querySelector('#layoutMenu').getBoundingClientRect();return b.left>=0&&b.right<=innerWidth})()"))
+            key('Escape',27)
+            check(f'{width}px both Clear actions remain reachable',js("['clearBtn','clearOutputBtn'].every(id=>{const a=document.getElementById(id),b=a.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)?.closest('button')===a})"))
+            click('#settingsBtn')
+            check(f'{width}px settings opens below toolbar',js("document.querySelector('#settings').getBoundingClientRect().top>=document.querySelector('.toolbar').getBoundingClientRect().bottom"))
             key('Escape',27)
     finally:
         auto(False);set_code(saved['code'] or '')

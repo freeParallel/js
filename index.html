@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-  <link rel="stylesheet" href="style.css?v=editor-layout-1">
+  <link rel="stylesheet" href="style.css?v=clear-options-1">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -85,7 +85,7 @@
       </button>
       <span class="sep"></span>
       <button id="clearBtn" class="btn" title="Clear code editor (undo with Ctrl+Z)" aria-label="Clear code editor">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg><span>Clear</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg><span>Clear code</span>
       </button>
       <button id="loadBtn" class="btn" type="button" title="Load a local code file (Ctrl+O)" aria-label="Load code from a local file">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h7l2 2h9l-3 11H3V7Zm0 0V4h6l2 3"/></svg><span>Load</span>
@@ -98,7 +98,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span>Share</span>
       </button>
       <span class="grow"></span>
-      <span class="pane-label">output</span>
+      <button id="clearOutputBtn" class="btn" type="button" title="Clear output only · keep code and execution" aria-label="Clear output only">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m7-5 4 4m0-4-4 4"/></svg><span>Clear output</span>
+      </button>
       <div class="layout-control">
         <button id="layoutBtn" class="btn" type="button" aria-label="Choose output layout" aria-expanded="false" aria-controls="layoutMenu" title="Output layout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M13 4v16"/></svg><span>Layout</span>
@@ -160,7 +162,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/acorn@8.12.1/dist/acorn.js"></script>
-  <script src="app.js?v=editor-layout-1"></script>
+  <script src="app.js?v=clear-options-1"></script>
   <!-- Cloudflare Web Analytics -->
   <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"8ab345c48040403c9d8c565fef2612bb"}'></script>
   <!-- End Cloudflare Web Analytics -->

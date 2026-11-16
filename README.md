@@ -23,8 +23,9 @@ python3 -m http.server 8765
 - Share links (code compressed into the URL hash), `Ctrl+S` copies the link
 - Download the current editor contents as `maquina-snippet.js` using **Save .js**, or `Ctrl+Shift+S` / `Cmd+Shift+S` while the editor is focused. Exact UTF-8 contents are preserved, including empty or unfinished code. The browser controls the download location; no upload is involved.
 - **Load** (`Ctrl+O` / `Cmd+O` while the editor is focused) opens a local `.js`, `.mjs`, `.cjs` or `.txt` file, up to 1 MB. It confirms before replacing different nonempty code. Loading pauses auto-run and clears old results; press Run when ready, or re-enable Run while typing in Settings. Manual mode stays manual after reload and display-setting changes. No upload is involved; file extensions do not add module/import support to the script runner.
-- Toolbar (Run / Stop / Clear / Load / Save .js / Share), status bar with run state, timing and cursor position
-- **Clear** empties the code editor and stale output, stops the old run and preserves Undo (`Ctrl+Z` / `Cmd+Z`). It also removes any obsolete shared-code hash so a refresh cannot restore the cleared snippet.
+- Toolbar (Run / Stop / Clear code / Load / Save .js / Share / Clear output / Layout), status bar with run state, timing and cursor position
+- **Clear code** empties the code editor and stale output, stops the old run and preserves Undo (`Ctrl+Z` / `Cmd+Z`). It also removes any obsolete shared-code hash so a refresh cannot restore the cleared snippet.
+- **Clear output** removes only current results and error highlights. Source, autosave, Undo history, share link, auto-run settings and running code are left intact. Later asynchronous output can still appear; use Stop to stop execution.
 - **Layout** opens three visual choices for the output: **Right**, **Below** or **Left**. The choice and separate horizontal/vertical split sizes are saved locally. The divider supports dragging, arrow keys, Home/End and double-click to reset. Below output has its own scrollbar and follows editor scrolling.
 - Settings: auto-run, expression results, line numbers, font size, timeout
 - Resizable split pane (double-click the divider to reset), fullscreen mode, code saved in localStorage
