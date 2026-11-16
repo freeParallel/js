@@ -239,3 +239,7 @@ body.resizing-vertical { cursor: row-resize; }
 .intro summary { cursor: pointer; color: var(--amber); width: fit-content; }
 .intro details p { padding: 6px 0; }
 @media (max-width: 760px) { .intro { padding: 10px 12px 0; } }
+
+/* Keep related editing actions adjacent even when the toolbar wraps. */
+.edit-actions { display: flex; flex: none; gap: 6px; }
+#undoBtn:disabled { opacity: .35; cursor: default; }

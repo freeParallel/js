@@ -246,6 +246,18 @@
     },
   });
 
+  const undoBtn = $('#undoBtn');
+  const updateUndo = () => { undoBtn.disabled = cm.historySize().undo === 0; };
+  undoBtn.onclick = () => {
+    if (undoBtn.disabled) return;
+    cm.undo();
+    cm.focus();
+    updateUndo();
+    setStatus('undo applied', false, '');
+  };
+  cm.on('changes', updateUndo);
+  updateUndo();
+
   // ----------------------------------------------------------------- results
   let results = new Map();   // line (or 'tail') -> [{kind, vtype, text}]
   let expanded = null;
